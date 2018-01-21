@@ -38,8 +38,8 @@ library(e1071)
 ##Loading Data
 
 ```{r}
-training <- read.csv("/Users/Lauren/Documents/Data Science Coursera/Prediction/pml-training.csv", na.strings=c("#DIV/0!"), row.names = 1)
-testing <- read.csv("/Users/Lauren/Documents/Data Science Coursera/Prediction/pml-testing.csv", na.strings=c("#DIV/0!"), row.names = 1)
+training <- read.csv("https://github.com/MJFan23/PredictionModel/blob/master/pml-training.csv", na.strings=c("#DIV/0!"), row.names = 1)
+testing <- read.csv("https://github.com/MJFan23/PredictionModel/blob/master/pml-testing.csv", na.strings=c("#DIV/0!"), row.names = 1)
 ```
 
 ##Cleaning the Data
