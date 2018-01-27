@@ -6,7 +6,7 @@ output: html_document
 ---
 ##Background
 
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
 
 ##Data
@@ -38,8 +38,12 @@ library(e1071)
 ##Loading Data
 
 ```{r}
-training <- read.csv("https://github.com/MJFan23/PredictionModel/blob/master/pml-training.csv", na.strings=c("#DIV/0!"), row.names = 1)
-testing <- read.csv("https://github.com/MJFan23/PredictionModel/blob/master/pml-testing.csv", na.strings=c("#DIV/0!"), row.names = 1)
+
+training <- read.csv("C:/Users/lmayer1/Documents/pml-training.csv", na.strings=c("#DIV/0!"), row.names = 1)
+testing <- read.csv("C:/Users/lmayer1/Documents/pml-testing.csv", na.strings=c("#DIV/0!"), row.names = 1)
+
+##training <- read.csv("https://github.com/MJFan23/PredictionModel/blob/master/pml-training.csv", na.strings=c("#DIV/0!"), row.names = 1)
+##testing <- read.csv("https://github.com/MJFan23/PredictionModel/blob/master/pml-testing.csv", na.strings=c("#DIV/0!"), row.names = 1)
 ```
 
 ##Cleaning the Data
@@ -53,8 +57,18 @@ dim(testing)
 trainingdata<-training[,colSums(is.na(training)) == 0]
 testingdata <-testing[,colSums(is.na(testing)) == 0]
 
-trainingdata  <-trainingdata[,-c(1:6)]
-testingdata <-testingdata[,-c(1:6)]
+blankColumns<- dim(trainingdata)[1] * 0.95
+#Remove columns with more than 95% of NA or "" values
+KeepColumns <- !apply(trainingdata, 2, function(x) sum(is.na(x)) > blankColumns || sum(x=="") > blankColumns)
+
+trainingdata <- trainingdata[, KeepColumns]
+blankColumns <- nearZeroVar(trainingdata, saveMetrics = TRUE)
+trainingdata <- trainingdata[, blankColumns$nzv==FALSE]
+trainingdata$classe = factor(trainingdata$classe)
+
+
+##trainingdata  <-trainingdata[,-c(1:6)]
+##testingdata <-testingdata[,-c(1:6)]
 
 dim(trainingdata)
 dim(testingdata)
@@ -63,13 +77,19 @@ dim(testingdata)
 
 ```{r}
 ## Partioning the data
-##pTraining <- createDataPartition(trainingdata$classe, p = 0.6)[[1]]
+pTraining <- createDataPartition(trainingdata$classe, p = 0.6)[[1]]
 valTraining <- trainingdata[-pTraining,]
-##trainingdata <- trainingdata[ pTraining,]
+trainingdata <- trainingdata[ pTraining,]
 pTraining <- createDataPartition(valTraining$classe, p = 0.75)[[1]]
 crossval <- valTraining[ -pTraining,]
-valTraining <- valTraining[pTraining,]
-trainingdata <- trainingdata[,8:60]
+
+##valTraining <- valTraining[pTraining,]
+##trainingdata <- trainingdata[,8:60]
+
+testingdata <- testingdata[, 6:dim(testingdata)[2]]
+testingdata <- testing[, KeepColumns]
+testingdata$classe <- NA
+testingdata <- testingdata[, blankColumns$nzv==FALSE]
 
 testingdata <- testingdata[, 6:dim(testingdata)[2]]
 testingdata$classe <- NA
@@ -88,9 +108,11 @@ plot(valTraining$classe, col="red", main="Frequency of Classe Levels", xlab="Cla
 
 ```{r}
 
-model1 <- randomForest(classe ~., data=trainingdata)
-prediction1 <- predict(model1, testingdata, type = "class")
-confusionMatrix(trainingdata$classe,precition1)
+model2 <- randomForest(classe ~., data=valTraining)
+prediction2 <- predict(model1, testingdata)
+
+##, type = "class")
+confusionMatrix(valTraining$classe,precition1)
 
 ```
 
@@ -98,9 +120,9 @@ confusionMatrix(trainingdata$classe,precition1)
 
 ```{r}
 
-model2 <- rpart(classe ~ ., data=valTraining, method="class")
-prediction2 <- predict(model2, Testingdata, type = "class")
-confusionMatrix(valTraining$classe,precition2)
+model1 <- train(classe ~ ., data=valTraining, method = "rf")
+prediction1 <- predict(model1, testingdata) ##, type = "class")
+confusionMatrix(valTraining$classe,precition1)
 
 ```
 
